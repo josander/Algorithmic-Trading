@@ -1,4 +1,8 @@
 %% Testing HMM-functions
+
+clc
+clear all
+
 % For a given transition and emission matrix
 
 % Transition matrix
@@ -41,4 +45,13 @@ maxiter = 1000;
 
 % Estimate the two matrices
 [trans_est2, emis_est2] = hmmtrain(seq, trans_guess, emis_guess,'maxiterations',maxiter);
+
+%% Assign a new initial state distribution
+
+% Given two initial states
+p = [0.1 0.9];
+
+trans_hat = [0 p; zeros(size(trans,1),1) trans];
+emis_hat = [zeros(1,size(emis,2)); emis];
+
 
