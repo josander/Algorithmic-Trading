@@ -1,3 +1,3 @@
 %% Algorithm for trading
-% Uses HMM in order to make forecasts about the stock market
+% Uses HMM in order to make prognosis about the stock market
 
