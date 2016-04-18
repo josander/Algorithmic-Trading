@@ -5,13 +5,14 @@ clf
 
 data = xlsread('WIKI-FLWS.xls');
 
+startLearning = 6;
 lengthLearningData = 20;
 
 % Get opening price
-open = data(2:2+lengthLearningData,2)';
+open = data(startLearning:startLearning+lengthLearningData-1,2)';
 
 % Get closing price
-close = data(2:2+lengthLearningData,5)';
+close = data(startLearning:startLearning+lengthLearningData-1,5)';
 
 % Get intraday movement
 movement = open - close;
@@ -21,6 +22,8 @@ seq = zeros(size(movement));
 seq(movement<0) = 1;
 seq(movement==0) = 2;
 seq(movement>0) = 3;
+
+disp(seq)
 
 % Create 5 hidden states: [big drop, small drop, constant, small rise, big rise]
 biggestChange = max(movement) - min(movement);
@@ -40,6 +43,8 @@ states(movement >= 3*b ) = 5;
 % Get estimate of transition and emision matrix
 [trans_est, emis_est] = hmmestimate(seq, states);
 
+disp(trans_est)
+disp(emis_est)
 
 % TRAIN THE HMM
 % Specify maximal number of iterations. Default is 500
