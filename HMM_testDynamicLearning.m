@@ -3,7 +3,7 @@ clc
 clear all
 clf
 
-data = xlsread('WIKI-FLWS.xls');
+data = xlsread('GOOG-LON_IGUS.xls');
 
 % Size of learningData
 lengthLearningData = 20;
@@ -134,3 +134,4 @@ err = immse(plotClose,plotCloseProg)
 
 % Display number of warnings
 disp(warnings)
+

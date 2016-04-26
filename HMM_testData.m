@@ -3,10 +3,10 @@ clc
 clear all
 clf
 
-data = xlsread('WIKI-FLWS.xls');
+data = xlsread('WIKI-FLWS.xls',1);
 
-startLearning = 6;
-lengthLearningData = 20;
+startLearning = 2;
+lengthLearningData = 60;
 
 % Get opening price
 open = data(startLearning:startLearning+lengthLearningData-1,2)';
@@ -22,8 +22,6 @@ seq = zeros(size(movement));
 seq(movement<0) = 1;
 seq(movement==0) = 2;
 seq(movement>0) = 3;
-
-disp(seq)
 
 % Create 5 hidden states: [big drop, small drop, constant, small rise, big rise]
 biggestChange = max(movement) - min(movement);
@@ -42,9 +40,6 @@ states(movement >= 3*b ) = 5;
 % ESTIMATE MATRICES
 % Get estimate of transition and emision matrix
 [trans_est, emis_est] = hmmestimate(seq, states);
-
-disp(trans_est)
-disp(emis_est)
 
 % TRAIN THE HMM
 % Specify maximal number of iterations. Default is 500

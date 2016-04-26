@@ -54,4 +54,6 @@ p = [0.1 0.9];
 trans_hat = [0 p; zeros(size(trans,1),1) trans];
 emis_hat = [zeros(1,size(emis,2)); emis];
 
+%% Decoding to get the probabilities of different states
 
+P = hmmdecode(seq, trans_est2, emis_est2);
