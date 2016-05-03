@@ -1,13 +1,12 @@
-function [ price ] = getPrice( likelyStates, delta, open, lengthLearning )
+function [ price ] = getPrice( likelyStates, delta, closing, endLearning )
 
-    openNew = open(lengthLearning+2:end);
+    closeNew = closing(endLearning+1:end);
 
-    price = zeros(size(likelyStates));
-    price(likelyStates == 1) = openNew(likelyStates == 1) - 4*delta;
-    price(likelyStates == 2) = openNew(likelyStates == 2) - 2*delta;
-    price(likelyStates == 3) = openNew(likelyStates == 3) + 0;
-    price(likelyStates == 4) = openNew(likelyStates == 4) + 2*delta;
-    price(likelyStates == 5) = openNew(likelyStates == 5) + 4*delta;
+    price(likelyStates == 1) = closeNew(likelyStates == 1) - 4*delta;
+    price(likelyStates == 2) = closeNew(likelyStates == 2) - 2*delta;
+    price(likelyStates == 3) = closeNew(likelyStates == 3) + 0;
+    price(likelyStates == 4) = closeNew(likelyStates == 4) + 2*delta;
+    price(likelyStates == 5) = closeNew(likelyStates == 5) + 4*delta;
 
 end
 

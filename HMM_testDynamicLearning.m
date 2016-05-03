@@ -6,7 +6,7 @@ clf
 data = xlsread('GOOG-LON_IGUS.xls');
 
 % Size of learningData
-lengthLearningData = 20;
+lengthLearningData = 50;
 
 % Start and stop learning
 startLearning = 2;
@@ -31,6 +31,7 @@ plotCloseProg = zeros(1,endLearning-1);
 tic
 for learn = startLearning:endLearning
     
+    disp(learn)
     % Get opening price
     open = data(learn:learn+lengthLearningData-1,2)';
     
@@ -38,31 +39,32 @@ for learn = startLearning:endLearning
     close = data(learn:learn+lengthLearningData-1,5)';
     
     % Get intraday movement
-    movement = open - close;
+    moveToday = open - close;
+    moveTomorrow = open(2:end) - close(2:end);
     
     % Create 3 observable states: [Rise, Constant, Drop]
-    seq = zeros(size(movement));
-    seq(movement<0) = 1;
-    seq(movement==0) = 2;
-    seq(movement>0) = 3;
+    seq = zeros(size(moveToday));
+    seq(moveToday<0) = 1;
+    seq(moveToday==0) = 2;
+    seq(moveToday>0) = 3;
     
     % Create 5 hidden states: [big drop, small drop, constant, small rise, big rise]
-    biggestChange = max(movement) - min(movement);
-    delta = biggestChange/500;
+    biggestChange = max(moveToday) - min(moveToday);
+    delta = 5;
     a = -delta;
     b = delta;
     
     % Create state-matrix [5x5]
-    states = zeros(size(movement));
-    states(movement < 3*a) = 1;
-    states(movement >= 3*a & movement < a) = 2;
-    states(movement >= a & movement < b) = 3;
-    states(movement >= b & movement < 3*b) = 4;
-    states(movement >= 3*b ) = 5;
+    states = zeros(size(moveTomorrow));
+    states(moveTomorrow < 3*a) = 1;
+    states(moveTomorrow >= 3*a & moveTomorrow < a) = 2;
+    states(moveTomorrow >= a & moveTomorrow < b) = 3;
+    states(moveTomorrow >= b & moveTomorrow < 3*b) = 4;
+    states(moveTomorrow >= 3*b ) = 5;
     
     % ESTIMATE MATRICES
     % Get estimate of transition and emision matrix
-    [trans_est, emis_est] = hmmestimate(seq, states);
+    [trans_est, emis_est] = hmmestimate(seq(1:end-1), states);
     
     % TRAIN THE HMM
     [trans_train, emis_train] = hmmtrain(seq, trans_est, emis_est,'maxiterations',maxiter,'Tolerance',tol);

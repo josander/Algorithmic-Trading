@@ -3,39 +3,40 @@ clc
 clear all
 clf
 
-data = xlsread('WIKI-FLWS.xls',1);
+data = xlsread('GOOG-LON_IGUS.xls',1);
 
-startLearning = 2;
-lengthLearningData = 60;
+startLearning = 15;
+lengthLearningData = 45;
 
 % Get opening price
-open = data(startLearning:startLearning+lengthLearningData-1,2)';
+open = data(startLearning:startLearning+lengthLearningData,2)';
 
 % Get closing price
-close = data(startLearning:startLearning+lengthLearningData-1,5)';
+close = data(startLearning:startLearning+lengthLearningData,5)';
 
 % Get intraday movement
-movement = open - close;
+movement = data(:,2) - data(:,5);
+moveToday = open(1:end-1) - close(1:end-1);
+moveTomorrow = open(2:end) - close(2:end);
 
 % Create 3 observable states: [Rise, Constant, Drop]
-seq = zeros(size(movement));
-seq(movement<0) = 1;
-seq(movement==0) = 2;
-seq(movement>0) = 3;
+seq = zeros(size(moveToday));
+seq(moveToday<0) = 1;
+seq(moveToday==0) = 2;
+seq(moveToday>0) = 3;
 
 % Create 5 hidden states: [big drop, small drop, constant, small rise, big rise]
-biggestChange = max(movement) - min(movement);
-delta = biggestChange/30;
+delta = 5;
 a = -delta;
 b = delta;
 
 % Create state-matrix [5x5]
-states = zeros(size(movement));
-states(movement < 3*a) = 1;
-states(movement >= 3*a & movement < a) = 2;
-states(movement >= a & movement < b) = 3;
-states(movement >= b & movement < 3*b) = 4;
-states(movement >= 3*b ) = 5;
+states = zeros(size(moveTomorrow));
+states(moveTomorrow < 3*a) = 1;
+states(moveTomorrow >= 3*a & moveTomorrow < a) = 2;
+states(moveTomorrow >= a & moveTomorrow < b) = 3;
+states(moveTomorrow >= b & moveTomorrow < 3*b) = 4;
+states(moveTomorrow >= 3*b ) = 5;
 
 % ESTIMATE MATRICES
 % Get estimate of transition and emision matrix
@@ -48,14 +49,16 @@ maxiter = 1000;
 % Estimate the two matrices
 [trans_train, emis_train] = hmmtrain(seq, trans_est, emis_est,'maxiterations',maxiter);
 
-days = zeros(1,size(data,1)-(2+lengthLearningData));
-plotStates = zeros(1,size(data,1)-(2+lengthLearningData));
-plotLikelyStates = zeros(1,size(data,1)-(2+lengthLearningData));
-plotClose = zeros(1,size(data,1)-(2+lengthLearningData));
-plotCloseProg = zeros(1,size(data,1)-(2+lengthLearningData));
+DayVec = 3+lengthLearningData+startLearning:size(data,1);
+days = zeros(size(DayVec));
+plotStates = zeros(size(DayVec));
+plotLikelyStates = zeros(size(DayVec));
+plotClose = zeros(size(DayVec));
+plotCloseProg = zeros(size(DayVec));
+progMovement = zeros(size(DayVec));
 
 % PROGNOSIS
-for nextDay = 3+lengthLearningData:size(data,1)
+for nextDay = DayVec
 
     % Get opening price
     openNew = data(nextDay,2)';
@@ -90,19 +93,55 @@ for nextDay = 3+lengthLearningData:size(data,1)
     close_prog(likelystatesNew == 4) = openNew(likelystatesNew == 4) + 2*b;
     close_prog(likelystatesNew == 5) = openNew(likelystatesNew == 5) + 4*b;
     
-    days(nextDay-(2+lengthLearningData)) = nextDay;
-    plotStates(nextDay-(2+lengthLearningData)) = statesNew;
-    plotLikelyStates(nextDay-(2+lengthLearningData)) = likelystatesNew;
-    plotClose(nextDay-(2+lengthLearningData)) = closeNew;
-    plotCloseProg(nextDay-(2+lengthLearningData)) = close_prog;
+    moveProg(likelystatesNew == 1) = 4*a;
+    moveProg(likelystatesNew == 2) = 2*a;
+    moveProg(likelystatesNew == 3) = 0;
+    moveProg(likelystatesNew == 4) = 2*b;
+    moveProg(likelystatesNew == 5) = 4*b;
+    
+    index = nextDay - (3+lengthLearningData+startLearning)+1;
+    days(index) = nextDay;
+    plotStates(index) = statesNew;
+    plotLikelyStates(index) = likelystatesNew;
+    plotClose(index) = closeNew;
+    plotCloseProg(index) = close_prog;
+    progMovement(index) = moveProg;
     
 end
 
+figure(1)
 subplot(2,1,1)
 plot(days, plotStates,'b-', days, plotLikelyStates,'r-');
+legend('Actual states','Likely states');
 
 subplot(2,1,2)
 plot(days, plotClose,'b-', days, plotCloseProg,'r-');
+legend('Actual closing price','Predicted closing price');
+
+figure(2)
+subplot(3,1,1)
+hist(seq)
+title('Seq')
+subplot(3,1,2)
+hist(states)
+title('States')
+subplot(3,1,3)
+hist(plotLikelyStates)
+title('Likely states')
+
+figure(3)
+plot(days,progMovement,1:length(data), movement)
+legend('Predicted movement','Actual movement')
+
+figure(4)
+plot(days,cumsum(progMovement)+data(days(1),2),1:length(data),data(:,5))
+legend('Cumulated movement','Closing price')
+
+correct = sum((progMovement > 0 & movement(end-length(progMovement):end-1)' > 0) | (progMovement < 0 & movement(end-length(progMovement):end-1)' < 0));
+wrong = length(progMovement) - correct;
+
+disp(['Correct',' ', 'Wrong'])
+disp([correct, wrong])
 
 % MSE
 err = immse(plotClose,plotCloseProg)
