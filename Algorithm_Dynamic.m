@@ -7,11 +7,11 @@ clear all
 
 % Length of learning data
 startLearning = 10; % No less than 10
-lengthLearningData = 120; % 45 is best but then we get a row with zeros in the emision matrix
-lengthProg = 5;
+lengthLearningData = 20;
+lengthProg = 20;
 
 % Set difference (delta) between two states
-delta = 2;
+delta = 5;
 
 % Starting capital
 capital = 100;
