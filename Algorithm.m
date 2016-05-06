@@ -6,11 +6,11 @@ clc
 clear all
 
 % Length of learning data
-startLearning = 15; % No less than 10
-lengthLearningData = 40; % 45 is best but then we get a row with zeros in the emision matrix
+startLearning = 10; % No less than 10
+lengthLearningData = 150; % 45 is best but then we get a row with zeros in the emision matrix
 
 % Set difference (delta) between two states
-delta = 6;
+delta = 2;
 
 % Starting capital
 capital = 100;
@@ -27,7 +27,7 @@ opening = data(:,2);
 closing = data(:,5);
 
 % Get price movement today and tomorrow
-moveToday = opening(1:end) - closing(1:end);
+moveToday = closing(1:end) - opening(1:end);
 moveTomorrow = moveToday(2:end);
 
 % Define learning vector for later
@@ -48,10 +48,38 @@ states = getHidden(moveTomorrow, delta);
 % Calculate the return
 endCapital = getEndingCapital(capital, opening, closing, learningVec(end), hidden);
 
+%---------------------------- Validation ---------------------------------%
+
+days = learningVec(end)+1:length(moveToday);
+movementProg = price-closing(learningVec(end)+1:end)';
+
+correctProg = ((hidden(1:end-1)==4 | hidden(1:end-1)==5) + ...
+    (states(learningVec(end)+1:end)== 4 | states(learningVec(end)+1:end)==5) == 2)...
+    + ((hidden(1:end-1)==3) + (states(learningVec(end)+1:end) == 3) == 2)...
+    + ((hidden(1:end-1)==1 | hidden(1:end-1)==2) + ...
+    (states(learningVec(end)+1:end)== 1 | states(learningVec(end)+1:end)==2) == 2);
+
+wrongProg = correctProg - 1;
+
+correct = sum(correctProg);
+
+wrong = -sum(wrongProg);
+
+disp(['Correct',' ', 'Wrong'])
+disp([correct, wrong])
+
+% MSE
+err = immse(movementProg(1:end-1),moveToday(learningVec(end)+2:end)');
+
+disp('Mean squared error:')
+disp(err)
+
+disp('Ending capital')
+disp(endCapital(end))
+
 %---------------------------- PLOTS --------------------------------------%
 
 % Plot the true and forecasted price
-days = learningVec(end)+1:length(moveToday);
 figure(1)
 subplot(2,1,1)
 plot(1:length(states), states,'b-', days, hidden,'r-');
@@ -76,35 +104,23 @@ hist(hidden);
 title('Predicted hidden states')
 
 figure(3)
-movementProg = price-closing(learningVec(end)+1:end)';
 plot(days+1,movementProg,1:length(moveToday), moveToday')
 legend('Predicted movement','Actual movement')
 
 figure(4)
-subplot(2,1,1)
+subplot(3,1,1)
 plot(days+1,cumsum(movementProg)+opening(days(1)),1:length(closing),closing)
 legend('Cumulated movement','Closing price')
 title('Price of asset')
 
-subplot(2,1,2)
+subplot(3,1,2)
 plot(days, endCapital, [1 days(end)], [capital capital])
 title('Capital')
 
-%---------------------------- Validation ---------------------------------%
+subplot(3,1,3)
+plot(days(1:end-1), cumsum(correctProg+wrongProg), [1 days(end)], [0 0])
+title('Cumulations of correct and wrong number of predictions')
 
-correct = sum((movementProg(1:end-1) > 0 & moveToday(learningVec(end)+2:end)' > 0) | ...
-    (movementProg(1:end-1) < 0 & moveToday(learningVec(end)+2:end)' < 0) | ...
-    (movementProg(1:end-1) == 0 & moveToday(learningVec(end)+2:end)' == 0));
-wrong = length(movementProg(1:end-1)) - correct;
+%% For evalutaion
 
-disp(['Correct',' ', 'Wrong'])
-disp([correct, wrong])
-
-% MSE
-err = immse(movementProg(1:end-1),moveToday(learningVec(end)+2:end)');
-
-disp('Mean squared error:')
-disp(err)
-
-disp('Ending capital')
-disp(endCapital(end))
+disp([(correctProg+wrongProg) endCapital(2:end)-1 hidden(1:end-1) states(learningVec(end)+1:end) moveToday(learningVec(end)+2:end)])
