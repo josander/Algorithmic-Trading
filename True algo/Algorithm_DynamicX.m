@@ -6,9 +6,9 @@ clc
 clear all
 
 % Length of learning data
-startLearning = 20; % No less than 10
-lengthLearningData = 125;
-lengthProg = 5;
+startLearning = 10; % No less than 10
+lengthLearningData = 50;
+lengthProg = 20;
 
 % Set difference (delta) between two states
 delta = 5;

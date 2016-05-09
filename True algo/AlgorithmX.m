@@ -6,8 +6,8 @@ clc
 clear all
 
 % Length of learning data
-startLearning = 50; % No less than 10
-lengthLearningData = 125; % 45 is best but then we get a row with zeros in the emision matrix
+startLearning = 10; % No less than 10
+lengthLearningData = 100;
 
 % Set difference (delta) between two states
 delta = 2;
@@ -127,3 +127,42 @@ title('Cumulations of correct and wrong number of predictions')
 %% For evalutaion
 
 disp([(correctProg+wrongProg) endCapital(2:end)-1 hidden(1:end-1) states(learningVec(end)+1:end) moveToday(learningVec(end)+2:end)])
+
+%---------------------------- PLOTS --------------------------------------%
+
+% Plot the true and forecasted price
+figure(1)
+subplot(1,1,1)
+plot(1:length(closing), closing','b-', days+1, price,'r-');
+legend('Actual closing price','Predicted closing price');
+xlabel('Day');
+
+figure(2)
+subplot(3,1,1)
+hist(seq)
+title('Histogram of observations');
+subplot(3,1,2)
+hist(states);
+title('Histogram of hidden states')
+subplot(3,1,3)
+hist(hidden);
+title('Predicted hidden states')
+
+figure(3)
+plot(days+1,movementProg,1:length(moveToday), moveToday')
+legend('Predicted movement','Actual movement')
+
+figure(4)
+subplot(1,1,1)
+plot(days+1,cumsum(movementProg)+opening(days(1)),1:length(closing),closing)
+legend('Cumulated movement','Closing price')
+title('Price of asset')
+
+figure(5)
+subplot(2,1,1)
+plot(days, endCapital, [1 days(end)], [capital capital])
+title('Capital')
+
+subplot(2,1,2)
+plot(days(1:end-1), cumsum(correctProg+wrongProg), [1 days(end)], [0 0])
+title('Cumulations of correct and wrong number of predictions')
