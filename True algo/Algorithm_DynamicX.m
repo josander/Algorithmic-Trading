@@ -7,11 +7,13 @@ clear all
 
 % Length of learning data
 startLearning = 10; % No less than 10
-lengthLearningData = 50;
-lengthProg = 20;
+lengthLearningData = 130;
+lengthProg = 25;
+
+dataset = 1;
 
 % Set difference (delta) between two states
-delta = 5;
+delta = 1;
 
 % Starting capital
 capital = 100;
@@ -21,11 +23,14 @@ capital = 100;
 % Read data
 data = xlsread('DataFiltered1.xlsx');
 
+first = [1 453];
+last = [370 822];
+
 % Get openinging price
-opening = data(1:end-1,3);
+opening = data(first(dataset):last(dataset)-1,3);
 
 % Get closing price
-closing = data(2:end,3);
+closing = data(first(dataset)+1:last(dataset),3);
 
 % Get price movement today and tomorrow
 moveToday = closing(1:end) - opening(1:end);
@@ -87,7 +92,7 @@ buy = data(1:end-1,6);
 sell = data(2:end,3);
 
 % Calculate the return
-endCapital = getEndingCapital(capital, buy, sell, startLearning+lengthLearningData-1, hidden);
+[endCapital, indexReturn] = getEndingCapital(capital, buy, sell, startLearning+lengthLearningData-1, hidden);
 
 %---------------------------- Validation ---------------------------------%
 
@@ -117,6 +122,10 @@ disp(err)
 
 disp('Ending capital')
 disp(endCapital(end))
+
+disp('Ratio')
+disp(correct/(correct+wrong)*100)
+
 
 %---------------------------- PLOTS --------------------------------------%
 
@@ -164,4 +173,50 @@ title('Cumulations of correct and wrong number of predictions')
 
 %% For evalutaion
 
-disp([(correctProg+wrongProg) endCapital(2:end)-1 hidden(1:end-1) states(startLearning+lengthLearningData:end) moveToday(startLearning+lengthLearningData+1:end)])
+%disp([(correctProg+wrongProg) endCapital(2:end) index(2:end) hidden(1:end-1) states(learningVec(end)+1:end) moveToday(learningVec(end)+2:end)])
+
+%---------------------------- PLOTS --------------------------------------%
+
+% Plot the true and forecasted price
+figure(1);
+subplot(1,1,1)
+plot(1:length(closing), closing','b-', days+1, price,'r-');
+set(gca,'TickLabelInterpreter','latex','fontsize',18)
+xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
+ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
+h_legend = legend('Actual closing price','Predicted closing price');
+set(h_legend,'Interpreter','latex', 'fontsize', 18);
+title('Prediction with dynamic learning model','Interpreter','latex', 'fontsize', 20);
+xlim([1 length(closing)])
+
+figure(2)
+subplot(1,1,1)
+plot(days+1,cumsum(movementProg)+opening(days(1)),'b',1:length(closing),closing,'r')
+set(gca,'TickLabelInterpreter','latex','fontsize',18)
+xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
+ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
+h_legend = legend('Cumulated movement','Actual closing price');
+set(h_legend,'Interpreter','latex', 'fontsize', 18);
+title('Prediction with dynamic learning model','Interpreter','latex', 'fontsize', 20);
+xlim([1 length(closing)])
+
+figure(3)
+subplot(1,1,1)
+plot(days, endCapital,'b',days, indexReturn,'r', [1 days(end)], [capital capital])
+set(gca,'TickLabelInterpreter','latex','fontsize',18)
+xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
+ylabel('Capital [SEK]','Interpreter','latex', 'fontsize', 18);
+h_legend = legend('Change in capital with HMM','Index movement');
+set(h_legend,'Interpreter','latex', 'fontsize', 18);
+title('Change in capital','Interpreter','latex', 'fontsize', 20);
+xlim([1 length(closing)])
+
+figure(4)
+subplot(1,1,1)
+plot(days(1:end-1), cumsum(correctProg+wrongProg),'b', [1 days(end)], [0 0],'r')
+set(gca,'TickLabelInterpreter','latex','fontsize',18)
+xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
+ylabel('[-]','Interpreter','latex', 'fontsize', 18);
+set(h_legend,'Interpreter','latex', 'fontsize', 18);
+title('Cumulations of correct and wrong number of predictions','Interpreter','latex', 'fontsize', 20);
+xlim([1 length(closing)])
