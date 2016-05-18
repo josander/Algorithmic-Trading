@@ -8,8 +8,8 @@ clear all
 % Length of learning data
 startLearning = 10; % No less than 10
 beginning = 10;
-change = 1;
-iterVector = beginning:change:250;
+change = 2;
+iterVector = beginning:change:300;
 deltas = zeros(iterVector(end)/change,1);
 correct = zeros(iterVector(end)/change,1);
 wrong = zeros(iterVector(end)/change,1);
@@ -46,7 +46,7 @@ for i = iterVector % 45 is best but then we get a row with zeros in the emision 
     learningVec = startLearning:startLearning+lengthLearningData-1;
     
     % Set difference (delta) between two states
-    delta = 2;
+    delta = 4;
     
     deltas(i/change) = delta;
     

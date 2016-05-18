@@ -54,7 +54,7 @@ states = getHidden(moveTomorrow, delta);
 % Get prognosis
 [price, hidden] = getPrognosis(seq, learningVec(end), trans, emis, delta, closing);
 
-% Slumpa fram dolda tillst?nd
+% Slumpa fram dolda tillstand
 %hidden = randi(5,length(hidden),1);
 
 buy = data(first(dataset):last(dataset)-1,6);
@@ -124,7 +124,7 @@ xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
 ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
 h_legend = legend('Cumulated movement','Actual closing price');
 set(h_legend,'Interpreter','latex', 'fontsize', 18);
-title('Prediction with static learning model','Interpreter','latex', 'fontsize', 20);
+title('Cumulated movement in price','Interpreter','latex', 'fontsize', 20);
 xlim([1 length(closing)])
 
 figure(3)
@@ -145,7 +145,7 @@ set(gca,'TickLabelInterpreter','latex','fontsize',18)
 xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
 ylabel('[-]','Interpreter','latex', 'fontsize', 18);
 set(h_legend,'Interpreter','latex', 'fontsize', 18);
-title('Cumulations of correct and wrong number of predictions','Interpreter','latex', 'fontsize', 20);
+title('Cumulated correct and wrong number of predictions','Interpreter','latex', 'fontsize', 20);
 xlim([1 length(closing)])
 
 
@@ -158,7 +158,7 @@ disp([(correctProg+wrongProg) endCapital(2:end) index(2:end) returnHMM(2:end) re
 
 %%
 SharpeRatio = sharpe(returnHMM(2:end), returnIndex(2:end));
-SharpeRatio
+SharpeRatio*100
 
 N = length(returnHMM(2:end));
 tstat = SharpeRatio * sqrt(N)

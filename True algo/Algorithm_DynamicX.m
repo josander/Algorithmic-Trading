@@ -8,9 +8,9 @@ clear all
 % Length of learning data
 startLearning = 10; % No less than 10
 lengthLearningData = 150;
-lengthProg = 2;
+lengthProg = 1;
 
-dataset = 1;
+dataset = 2;
 
 % Set difference (delta) between two states
 delta = 2;
@@ -232,4 +232,4 @@ disp([(correctProg+wrongProg) endCapital(2:end) indexReturn(2:end) returnHMM(2:e
 
 SharpeRatio = sharpe(returnHMM(2:end), returnIndex(2:end));
 
-disp(SharpeRatio)
+disp(SharpeRatio*100)
