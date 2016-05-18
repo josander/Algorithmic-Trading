@@ -45,7 +45,7 @@ learningVec = startLearning:startLearning+lengthLearningData-1;
 % Get observable sequence for learning
 seq = getObservations(moveToday, closing, delta);
 
-% Get hidden sequenc e for learning
+% Get hidden sequence for learning
 states = getHidden(moveTomorrow, delta);
 
 % Get model parameters
@@ -54,11 +54,14 @@ states = getHidden(moveTomorrow, delta);
 % Get prognosis
 [price, hidden] = getPrognosis(seq, learningVec(end), trans, emis, delta, closing);
 
+% Slumpa fram dolda tillst?nd
+%hidden = randi(5,length(hidden),1);
+
 buy = data(1:end-1,6);
 sell = data(2:end,3);
 
 % Calculate the return
-[endCapital, index] = getEndingCapital(capital, buy, sell, learningVec(end), hidden);
+[endCapital, index, returnHMM, returnIndex] = getEndingCapital(capital, buy, sell, learningVec(end), hidden);
 
 %---------------------------- Validation ---------------------------------%
 
@@ -77,34 +80,32 @@ correct = sum(correctProg);
 
 wrong = -sum(wrongProg);
 
-disp(['Correct',' ', 'Wrong'])
-disp([correct, wrong])
+%disp(['Correct',' ', 'Wrong'])
+%disp([correct, wrong])
 
 % MSE
 err = immse(movementProg(1:end-1),moveToday(learningVec(end)+2:end)');
 
-disp('Mean squared error:')
-disp(err)
+%disp('Mean squared error:')
+%disp(err)
 
-disp('Ending capital')
-disp(endCapital(end))
+%disp('Ending capital')
+%disp(endCapital(end))
 
-disp('Index')
-disp(index(end))
+%disp('Index')
+%disp(index(end))
 
 disp('Ratio [%]')
 disp(correct/(correct+wrong)*100)
 
-%% For evalutaion
-
-disp([(correctProg+wrongProg) endCapital(2:end) index(2:end) hidden(1:end-1) states(learningVec(end)+1:end) moveToday(learningVec(end)+2:end)])
-
+%%
 %---------------------------- PLOTS --------------------------------------%
 
 % Plot the true and forecasted price
 figure(1);
+clf
 subplot(1,1,1)
-plot(1:length(closing), closing','b-', days+1, price,'r-');
+plot(1:length(closing), closing','b-', days+1, price,'r-', days, index*15);
 set(gca,'TickLabelInterpreter','latex','fontsize',18)
 xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
 ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
@@ -144,6 +145,30 @@ ylabel('[-]','Interpreter','latex', 'fontsize', 18);
 set(h_legend,'Interpreter','latex', 'fontsize', 18);
 title('Cumulations of correct and wrong number of predictions','Interpreter','latex', 'fontsize', 20);
 xlim([1 length(closing)])
+
+
+%% 
+
+%----------------------- Evalutaion of algorithm -------------------------%
+
+disp(['Corr/wrong',' ','CapitalHMM',' ','CapitalIndex',' ','RetHMM',' ','RetIndex','   ', 'PredState', '   ' ,'ActState'])
+disp([(correctProg+wrongProg) endCapital(2:end) index(2:end) returnHMM(2:end) returnIndex(2:end) hidden(1:end-1) states(learningVec(end)+1:end) moveToday(learningVec(end)+2:end)])
+
+
+SharpeRatio = sharpe(returnHMM(2:end), returnIndex(2:end));
+SharpeRatio*100
+
+N = length(returnHMM(2:end));
+tstat = SharpeRatio * sqrt(N)
+pValue = tcdf(tstat, N-1)
+
+hypothesisTest(returnHMM, returnIndex)
+
+%%
+upDown = hidden;
+upDown((upDown==3)) = [];
+upDown((upDown==1)|(upDown==2)) = 0;
+upDown((upDown==4)|(upDown==5)) = 1;
 
 
 %%
@@ -190,3 +215,5 @@ title('Capital')
 subplot(3,1,3)
 plot(days(1:end-1), cumsum(correctProg+wrongProg), [1 days(end)], [0 0])
 title('Cumulations of correct and wrong number of predictions')
+
+

@@ -7,13 +7,13 @@ clear all
 
 % Length of learning data
 startLearning = 10; % No less than 10
-lengthLearningData = 130;
-lengthProg = 25;
+lengthLearningData = 150;
+lengthProg = 1;
 
 dataset = 1;
 
 % Set difference (delta) between two states
-delta = 1;
+delta = 2;
 
 % Starting capital
 capital = 100;
@@ -39,7 +39,7 @@ moveTomorrow = moveToday(2:end);
 % Get observable sequence for learning
 seq = getObservations(moveToday, closing, delta);
 
-% Get hidden sequenc e for learning
+% Get hidden sequence for learning
 states = getHidden(moveTomorrow, delta);
 
 % Define where the last learning will begin
@@ -92,7 +92,7 @@ buy = data(1:end-1,6);
 sell = data(2:end,3);
 
 % Calculate the return
-[endCapital, indexReturn] = getEndingCapital(capital, buy, sell, startLearning+lengthLearningData-1, hidden);
+[endCapital, indexReturn, returnHMM, returnIndex] = getEndingCapital(capital, buy, sell, startLearning+lengthLearningData-1, hidden);
 
 %---------------------------- Validation ---------------------------------%
 
@@ -126,7 +126,7 @@ disp(endCapital(end))
 disp('Ratio')
 disp(correct/(correct+wrong)*100)
 
-
+%%
 %---------------------------- PLOTS --------------------------------------%
 
 % Plot the true and forecasted price
@@ -171,10 +171,8 @@ subplot(3,1,3)
 plot(days(1:end-1), cumsum(correctProg+wrongProg), [1 days(end)], [0 0])
 title('Cumulations of correct and wrong number of predictions')
 
-%% For evalutaion
 
-%disp([(correctProg+wrongProg) endCapital(2:end) index(2:end) hidden(1:end-1) states(learningVec(end)+1:end) moveToday(learningVec(end)+2:end)])
-
+%%
 %---------------------------- PLOTS --------------------------------------%
 
 % Plot the true and forecasted price
@@ -191,18 +189,18 @@ xlim([1 length(closing)])
 
 figure(2)
 subplot(1,1,1)
-plot(days+1,cumsum(movementProg)+opening(days(1)),'b',1:length(closing),closing,'r')
+plot(days,cumsum(movementProg)+opening(days(1)),'b',1:length(closing),closing,'r')
 set(gca,'TickLabelInterpreter','latex','fontsize',18)
 xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
 ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
 h_legend = legend('Cumulated movement','Actual closing price');
 set(h_legend,'Interpreter','latex', 'fontsize', 18);
-title('Prediction with dynamic learning model','Interpreter','latex', 'fontsize', 20);
+title('Cumulated movement in price','Interpreter','latex', 'fontsize', 20);
 xlim([1 length(closing)])
 
 figure(3)
 subplot(1,1,1)
-plot(days, endCapital,'b',days, indexReturn,'r', [1 days(end)], [capital capital])
+plot(days, endCapital,'b',days, indexReturn,'r', [1 days(end)], [capital capital], 'k')
 set(gca,'TickLabelInterpreter','latex','fontsize',18)
 xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
 ylabel('Capital [SEK]','Interpreter','latex', 'fontsize', 18);
@@ -213,10 +211,22 @@ xlim([1 length(closing)])
 
 figure(4)
 subplot(1,1,1)
-plot(days(1:end-1), cumsum(correctProg+wrongProg),'b', [1 days(end)], [0 0],'r')
+plot(days(1:end-1), cumsum(correctProg+wrongProg),'b', [1 days(end)], [0 0],'k')
 set(gca,'TickLabelInterpreter','latex','fontsize',18)
 xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
 ylabel('[-]','Interpreter','latex', 'fontsize', 18);
 set(h_legend,'Interpreter','latex', 'fontsize', 18);
-title('Cumulations of correct and wrong number of predictions','Interpreter','latex', 'fontsize', 20);
+title('Cumulated correct and wrong number of predictions','Interpreter','latex', 'fontsize', 20);
 xlim([1 length(closing)])
+
+
+%% 
+
+%----------------------- Evalutaion of algorithm -------------------------%
+
+disp(['Corr/wrong',' ','CapitalHMM',' ','CapitalIndex',' ','RetHMM',' ','RetIndex','   ', 'PredState', '   ' ,'ActState', ' ','Movement', ' ', 'Day'])
+disp([(correctProg+wrongProg) endCapital(2:end) indexReturn(2:end) returnHMM(2:end) returnIndex(2:end) hidden(1:end-1) states(startLearning+lengthLearningData:end) moveToday(startLearning+lengthLearningData+1:end) days(2:end)'])
+
+SharpeRatio = sharpe(returnHMM(2:end), returnIndex(2:end));
+
+disp(SharpeRatio*100)

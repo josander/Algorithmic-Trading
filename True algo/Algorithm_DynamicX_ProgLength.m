@@ -11,7 +11,7 @@ lengthLearningData = 150;
 delta = 2;
 
 % Read data
-data = xlsread('DataFiltered2Adj.xlsx');
+data = xlsread('OMXS30 2011-2013.xls');
 
 first = [1 453];
 last = [370 822];
@@ -162,8 +162,8 @@ plot(iterVector, cap(:,1),'b');%,iterVector,cap(:,2),'r');
 set(gca,'TickLabelInterpreter','latex','fontsize',18)
 xlabel('Prediction length $l$','Interpreter','latex', 'fontsize', 18);
 ylabel('Capital [SEK]','Interpreter','latex', 'fontsize', 18);
-h_legend = legend('Data set 1','Data set 2');
-set(h_legend,'Interpreter','latex', 'fontsize', 18);
+%h_legend = legend('Data set 1','Data set 2');
+%set(h_legend,'Interpreter','latex', 'fontsize', 18);
 title('Development of capital','Interpreter','latex', 'fontsize', 20);
 xlim([iterVector(1) iterVector(end)])
 

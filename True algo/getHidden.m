@@ -22,15 +22,15 @@ hidden = zeros(length(movementTomorrow), 1);
 % hidden(movementTomorrow >= 5*delta ) = 7;
 
 % Five states
-hidden(movementTomorrow < -3*delta) = 1;
-hidden(movementTomorrow >= -3*delta & movementTomorrow < -delta) = 2;
-hidden(movementTomorrow >= -delta & movementTomorrow < delta) = 3;
-hidden(movementTomorrow >= delta & movementTomorrow < 3*delta) = 4;
-hidden(movementTomorrow >= 3*delta ) = 5;
+% hidden(movementTomorrow < -3*delta) = 1;
+% hidden(movementTomorrow >= -3*delta & movementTomorrow < -delta) = 2;
+% hidden(movementTomorrow >= -delta & movementTomorrow < delta) = 3;
+% hidden(movementTomorrow >= delta & movementTomorrow < 3*delta) = 4;
+% hidden(movementTomorrow >= 3*delta ) = 5;
 
 % Three states
-% hidden(movementTomorrow < 0) = 1;
-% hidden(movementTomorrow == 0) = 2;
-% hidden(movementTomorrow > 0) = 3;
+hidden(movementTomorrow < 0) = 1;
+hidden(movementTomorrow == 0) = 2;
+hidden(movementTomorrow > 0) = 3;
 
 end
