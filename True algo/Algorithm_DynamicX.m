@@ -8,7 +8,7 @@ clear all
 % Length of learning data
 startLearning = 10; % No less than 10
 lengthLearningData = 150;
-lengthProg = 1;
+lengthProg = 2;
 
 dataset = 1;
 
@@ -88,22 +88,25 @@ if learningVec(end)+lengthProg ~= length(moveToday)
     
 end
 
-buy = data(1:end-1,6);
-sell = data(2:end,3);
+buy = data(first(dataset):last(dataset)-1,6);
+sell = data(first(dataset)+1:last(dataset),3);
 
 % Calculate the return
-[endCapital, indexReturn, returnHMM, returnIndex] = getEndingCapital(capital, buy, sell, startLearning+lengthLearningData-1, hidden);
+[endCapital, indexReturn, returnHMM, returnIndex, priceChange] = getEndingCapital(capital, buy, sell, startLearning+lengthLearningData-1, hidden);
 
 %---------------------------- Validation ---------------------------------%
 
 days = startLearning+lengthLearningData:length(moveToday);
 movementProg = price-closing(startLearning+lengthLearningData:end);
 
-correctProg = ((hidden(1:end-1)==4 | hidden(1:end-1)==5) + ...
-    (states(startLearning+lengthLearningData:end)== 4 | states(startLearning+lengthLearningData:end)==5) == 2)...
-    + ((hidden(1:end-1)==3) + (states(startLearning+lengthLearningData:end) == 3) == 2)...
-    + ((hidden(1:end-1)==1 | hidden(1:end-1)==2) + ...
-    (states(startLearning+lengthLearningData:end)== 1 | states(startLearning+lengthLearningData:end)==2) == 2);
+% correctProg = ((hidden(1:end-1)==4 | hidden(1:end-1)==5) + ...
+%     (states(startLearning+lengthLearningData:end)== 4 | states(startLearning+lengthLearningData:end)==5) == 2)...
+%     + ((hidden(1:end-1)==3) + (states(startLearning+lengthLearningData:end) == 3) == 2)...
+%     + ((hidden(1:end-1)==1 | hidden(1:end-1)==2) + ...
+%     (states(startLearning+lengthLearningData:end)== 1 | states(startLearning+lengthLearningData:end)==2) == 2);
+
+correctProg = (hidden(1:end-1)==states(startLearning+lengthLearningData:end));
+
 
 wrongProg = correctProg - 1;
 
@@ -229,4 +232,4 @@ disp([(correctProg+wrongProg) endCapital(2:end) indexReturn(2:end) returnHMM(2:e
 
 SharpeRatio = sharpe(returnHMM(2:end), returnIndex(2:end));
 
-disp(SharpeRatio*100)
+disp(SharpeRatio)

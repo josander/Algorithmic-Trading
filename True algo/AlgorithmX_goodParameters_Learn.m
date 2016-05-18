@@ -7,8 +7,8 @@ clear all
 
 % Length of learning data
 startLearning = 10; % No less than 10
-beginning = 20;
-change = 5;
+beginning = 10;
+change = 1;
 iterVector = beginning:change:250;
 deltas = zeros(iterVector(end)/change,1);
 correct = zeros(iterVector(end)/change,1);
@@ -30,82 +30,87 @@ data = xlsread('OMXS30 2011-2013.xls');
 
 dataset = 1;
 %for dataset = 1:2
-    first = [1 453];
-    last = [370 822];
+first = [1 453];
+last = [370 822];
+
+% Get openinging price
+%opening = data(first(dataset):last(dataset)-1,2);
+opening = data(1:end-1,2);
+% Get closing price
+%closing = data(first(dataset)+1:last(dataset),2);
+closing = data(2:end,2);
+
+for i = iterVector % 45 is best but then we get a row with zeros in the emision matrix
+    disp(i)
+    lengthLearningData = i;
+    learningVec = startLearning:startLearning+lengthLearningData-1;
     
-    % Get openinging price
-    %opening = data(first(dataset):last(dataset)-1,2);
-    opening = data(1:end-1,2);
-    % Get closing price
-    %closing = data(first(dataset)+1:last(dataset),2);
-    closing = data(2:end,2);
+    % Set difference (delta) between two states
+    delta = 2;
     
-    for i = iterVector % 45 is best but then we get a row with zeros in the emision matrix
-        disp(i)
-        lengthLearningData = i;
-        learningVec = startLearning:startLearning+lengthLearningData-1;
-        
-        % Set difference (delta) between two states
-        delta = 2;
-        
-        deltas(i/change) = delta;
-        
-        % Starting capital
-        capital = 100;
-        
-        %-------------------------------------------------------------------------%
-        
-        % Get price movement today and tomorrow
-        moveToday = closing - opening;
-        moveTomorrow = moveToday(2:end);
-        
-        % Get observable sequence for learning
-        seq = getObservations(moveToday, closing, delta);
-        
-        % Get hidden sequenc e for learning
-        states = getHidden(moveTomorrow, delta);
-        
-        % Get model parameters
-        [trans, emis] = getModel(seq(learningVec), states(learningVec));
-        
-        % Get prognosis
-        [price, hidden] = getPrognosis(seq, learningVec(end), trans, emis, delta, closing);
-        
-        %buy = data(1:end-1,6);
-        %sell = data(2:end,3);
-        
-        buy = opening;
-        sell = closing;
-        
-        % Calculate the return
-        [endCapital, index] = getEndingCapital(capital, buy, sell, learningVec(end), hidden);
-        
-        movementProg = price-closing(learningVec(end)+1:end)';
-        
-        %---------------------------- Validation ---------------------------------%
-        
-        correct(i/change) = sum((movementProg(1:end-1) > 0 & moveToday(learningVec(end)+2:end)' > 0) | ...
-            (movementProg(1:end-1) < 0 & moveToday(learningVec(end)+2:end)' < 0) | ...
-            (movementProg(1:end-1) == 0 & moveToday(learningVec(end)+2:end)' == 0));
-        wrong(i/change) = length(movementProg(1:end-1)) - correct(i/change);
-        
-        money(i/change) = mean(endCapital);
-        
-        err(i/change) = immse(movementProg(1:end-1),moveToday(learningVec(end)+2:end)');
-        
-    end
+    deltas(i/change) = delta;
     
+    % Starting capital
+    capital = 100;
     
-    ratio = correct./(correct+wrong);
+    %-------------------------------------------------------------------------%
     
-    disp(['LengthLearn','  ','Error ratio','  ','Ending capital',' ','MSE [10^3]'])
-    disp([iter, ratio, money, err/1000])
+    % Get price movement today and tomorrow
+    moveToday = closing - opening;
+    moveTomorrow = moveToday(2:end);
     
-    rat(:,dataset) = ratio';
+    % Get observable sequence for learning
+    seq = getObservations(moveToday, closing, delta);
     
-    cap(:,dataset) = money;
-    error(:,dataset) = err;
+    % Get hidden sequenc e for learning
+    states = getHidden(moveTomorrow, delta);
     
+    % Get model parameters
+    [trans, emis] = getModel(seq(learningVec), states(learningVec));
+    
+    % Get prognosis
+    [price, hidden] = getPrognosis(seq, learningVec(end), trans, emis, delta, closing);
+    
+    buy = opening;
+    sell = closing;
+    
+    % Calculate the return
+    [endCapital, index] = getEndingCapital(capital, buy, sell, learningVec(end), hidden);
+    
+    movementProg = price-closing(learningVec(end)+1:end)';
+    
+    %---------------------------- Validation ---------------------------------%
+    % correctProg = ((hidden(1:end-1)==4 | hidden(1:end-1)==5) + ...
+    %     (states(startLearning+lengthLearningData:end)== 4 | states(startLearning+lengthLearningData:end)==5) == 2)...
+    %     + ((hidden(1:end-1)==3) + (states(startLearning+lengthLearningData:end) == 3) == 2)...
+    %     + ((hidden(1:end-1)==1 | hidden(1:end-1)==2) + ...
+    %     (states(startLearning+lengthLearningData:end)== 1 | states(startLearning+lengthLearningData:end)==2) == 2);
+    
+    correctProg = (hidden(1:end-1)==states(startLearning+lengthLearningData:end));
+    
+    wrongProg = correctProg - 1;
+    
+    correct(i/change) = sum(correctProg);
+    
+    wrong(i/change) = -sum(wrongProg);
+    
+    money(i/change) = mean(endCapital);
+    
+    err(i/change) = immse(movementProg(1:end-1),moveToday(learningVec(end)+2:end)');
+    
+end
+
+
+ratio = correct./(correct+wrong);
+
+disp(['LengthLearn','  ','Error ratio','  ','Ending capital',' ','MSE [10^3]'])
+disp([iter, ratio, money, err/1000])
+
+rat(:,dataset) = ratio';
+
+cap(:,dataset) = money;
+error(:,dataset) = err;
+
 %end
 %%
 %---------------------------- PLOTS --------------------------------------%
