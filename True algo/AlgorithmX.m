@@ -1,7 +1,7 @@
 %% Algorithm for trading on the stock market
 % Uses HMM in order to make prognosis about the stock market
 
-clf
+%clf
 clc
 clear all
 
@@ -9,96 +9,108 @@ clear all
 startLearning = 10; % No less than 10
 lengthLearningData = 150;
 
-% Chose data set
-dataset = 2;
-
-% Set difference (delta) between two states
-delta = 2;
-
-% Starting capital
-capital = 100;
-
-%-------------------------------------------------------------------------%
-
-% Filename
-file = 'DataFiltered1.xlsx';
-
 % Read data
-data = xlsread(file);
+data = xlsread('OMXS30 1985-2016.xls');
 
-first = [1 453];
-last = [370 822];
+disp(['Ratio [%]',' ','Sharpe [%]',' ', 'Capital HMM',' ' , 'Capital index'])
 
-% Get openinging price
-opening = data(first(dataset):last(dataset)-1,3);
-
-% Get closing price
-closing = data(first(dataset)+1:last(dataset),3);
-
-% Get price movement today and tomorrow
-moveToday = closing - opening;
-moveTomorrow = moveToday(2:end);
-
-% Define learning vector for later
-learningVec = startLearning:startLearning+lengthLearningData-1;
-
-% Get observable sequence for learning
-seq = getObservations(moveToday, closing, delta);
-
-% Get hidden sequence for learning
-states = getHidden(moveTomorrow, delta);
-
-% Get model parameters
-[trans, emis] = getModel(seq(learningVec), states(learningVec));
-
-% Get prognosis
-[price, hidden] = getPrognosis(seq, learningVec(end), trans, emis, delta, closing);
-
-% Slumpa fram dolda tillstand
-%hidden = randi(5,length(hidden),1);
-
-buy = data(first(dataset):last(dataset)-1,6);
-sell = data(first(dataset)+1:last(dataset),3);
-
-% Calculate the return
-[endCapital, index, returnHMM, returnIndex, priceChange] = getEndingCapital(capital, buy, sell, learningVec(end), hidden);
-
-%---------------------------- Validation ---------------------------------%
-
-days = learningVec(end)+1:length(moveToday);
-movementProg = price-closing(learningVec(end)+1:end)';
-
-% correctProg = ((hidden(1:end-1)==4 | hidden(1:end-1)==5) + ...
-%     (states(startLearning+lengthLearningData:end)== 4 | states(startLearning+lengthLearningData:end)==5) == 2)...
-%     + ((hidden(1:end-1)==3) + (states(startLearning+lengthLearningData:end) == 3) == 2)...
-%     + ((hidden(1:end-1)==1 | hidden(1:end-1)==2) + ...
-%     (states(startLearning+lengthLearningData:end)== 1 | states(startLearning+lengthLearningData:end)==2) == 2);
-
-correctProg = (hidden(1:end-1)==states(startLearning+lengthLearningData:end));
-
-wrongProg = correctProg - 1;
-
-correct = sum(correctProg);
-
-wrong = -sum(wrongProg);
-
-%disp(['Correct',' ', 'Wrong'])
-%disp([correct, wrong])
-
-% MSE
-err = immse(movementProg(1:end-1),moveToday(learningVec(end)+2:end)');
-
-%disp('Mean squared error:')
-%disp(err)
-
-%disp('Ending capital')
-%disp(endCapital(end))
-
-%disp('Index')
-%disp(index(end))
-
-disp('Ratio [%]')
-disp(correct/(correct+wrong)*100)
+% Chose data set
+for dataset = 1:20;
+    
+    % Set difference (delta) between two states
+    delta = 2;
+    
+    % Starting capital
+    capital = 100;
+    
+    %-------------------------------------------------------------------------%
+    
+    first =(1:370:7031)';
+    last = (371:370:7420)';
+    
+    % Get openinging price
+    opening = data(first(dataset):last(dataset)-1,4);
+    %
+    % Get closing price
+    closing = data(first(dataset)+1:last(dataset),4);
+    
+    % Get price movement today and tomorrow
+    moveToday = closing - opening;
+    moveTomorrow = moveToday(2:end);
+    
+    % Define learning vector for later
+    learningVec = startLearning:startLearning+lengthLearningData-1;
+    
+    % Get observable sequence for learning
+    seq = getObservations(moveToday, closing, delta);
+    
+    % Get hidden sequence for learning
+    states = getHidden(moveTomorrow, delta);
+    
+    % Get model parameters
+    [trans, emis] = getModel(seq(learningVec), states(learningVec));
+    
+    % Get prognosis
+    [price, hidden] = getPrognosis(seq, learningVec(end), trans, emis, delta, closing);
+    
+    % Slumpa fram dolda tillstand
+    %hidden = randi(2,length(hidden),1);
+    
+    buy = opening;%data(first(dataset):last(dataset)-1,6);
+    sell = closing;%data(first(dataset)+1:last(dataset),3);
+    
+    % Calculate the return
+    [endCapital, index, returnHMM, returnIndex, priceChange] = getEndingCapital(capital, buy, sell, learningVec(end), hidden);
+    
+    %---------------------------- Validation ---------------------------------%
+    
+    days = learningVec(end)+1:length(moveToday);
+    movementProg = price-closing(learningVec(end)+1:end)';
+    
+    % correctProg = ((hidden(1:end-1)==4 | hidden(1:end-1)==5) + ...
+    %     (states(startLearning+lengthLearningData:end)== 4 | states(startLearning+lengthLearningData:end)==5) == 2)...
+    %     + ((hidden(1:end-1)==3) + (states(startLearning+lengthLearningData:end) == 3) == 2)...
+    %     + ((hidden(1:end-1)==1 | hidden(1:end-1)==2) + ...
+    %     (states(startLearning+lengthLearningData:end)== 1 | states(startLearning+lengthLearningData:end)==2) == 2);
+    
+    correctProg = (hidden(1:end-1)==states(startLearning+lengthLearningData:end));
+    
+    wrongProg = correctProg - 1;
+    
+    correct = sum(correctProg);
+    
+    wrong = -sum(wrongProg);
+    
+    %disp(['Correct',' ', 'Wrong'])
+    %disp([correct, wrong])
+    
+    % MSE
+    err = immse(movementProg(1:end-1),moveToday(learningVec(end)+2:end)');
+    
+    %disp('Mean squared error:')
+    %disp(err)
+    
+    %disp('Ending capital')
+    %disp(endCapital(end))
+    
+    %disp('Index')
+    %disp(index(end))
+    
+    SharpeRatio = sharpe(returnHMM(2:end), returnIndex(2:end));
+    disp([correct/(correct+wrong)*100 SharpeRatio*100 endCapital(end) index(end)])
+    
+    figure(dataset)
+    subplot(1,1,1)
+    plot(days, endCapital,'b',days, index,'r', [1 days(end)], [capital capital],'k')
+    set(gca,'TickLabelInterpreter','latex','fontsize',18)
+    xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
+    ylabel('Capital [SEK]','Interpreter','latex', 'fontsize', 18);
+    h_legend = legend('Change in capital with HMM','Index movement');
+    set(h_legend,'Interpreter','latex', 'fontsize', 18);
+    title('Change in capital','Interpreter','latex', 'fontsize', 20);
+    xlim([1 length(closing)])
+    
+end
 
 %%
 %---------------------------- PLOTS --------------------------------------%
@@ -149,7 +161,7 @@ title('Cumulated correct and wrong number of predictions','Interpreter','latex',
 xlim([1 length(closing)])
 
 
-%% 
+%%
 
 %----------------------- Evalutaion of algorithm -------------------------%
 
