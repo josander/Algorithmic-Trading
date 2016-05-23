@@ -21,10 +21,11 @@ function [ seq ] = getObservations( movementToday, closing, delta)
 movAver = tsmovavg(closing,'s',10,1);
 
 % Difference in closing price and 10-value moving average
-meanReversion = closing - movAver;
-meanRev(meanReversion > delta) = 1;
-meanRev(meanReversion <= delta & meanReversion >= -delta) = 2;
-meanRev(meanReversion < -delta) = 3;
+meanDisplacement = zeros(size(closing));
+meanDisplacement(2:end) = closing(2:end) - movAver(1:end-1);
+meanRev(meanDisplacement > delta) = 1;
+meanRev(meanDisplacement <= delta & meanDisplacement >= -delta) = 2;
+meanRev(meanDisplacement < -delta) = 3;
 
 mov(movementToday>delta) = 1;
 mov(movementToday<= delta & movementToday >= -delta) = 2;

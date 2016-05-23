@@ -6,16 +6,22 @@ clc
 clear all
 
 % Length of learning data
-startLearning = 10; % No less than 10
+startLearning = 11; % No less than 11
 lengthLearningData = 150;
 
 % Read data
-data = xlsread('OMXS30 1985-2016.xls');
+data = xlsread('DataFiltered1.xlsx');
 
-disp(['Ratio [%]',' ','Sharpe [%]',' ', 'Capital HMM',' ' , 'Capital index'])
+
+ratio = zeros(20,1);
+pValueRatio = zeros(20,1);
+SharpeRatio = zeros(20,1);
+pValueReturn = zeros(20,1);
+absReturn = zeros(20,1);
+avgReturn = zeros(20,1);
 
 % Chose data set
-for dataset = 1:20;
+for dataset = 1:1;
     
     % Set difference (delta) between two states
     delta = 2;
@@ -25,14 +31,18 @@ for dataset = 1:20;
     
     %-------------------------------------------------------------------------%
     
-    first =(1:370:7031)';
-    last = (371:370:7420)';
+    %first = (1:371:7050)';
+    %last = (371:371:7420)';
+    first = [1 453];
+    last = [371 823];
     
     % Get openinging price
-    opening = data(first(dataset):last(dataset)-1,4);
+    opening = data(first(dataset):last(dataset)-1,3);
+    %opening = data(first(dataset):last(dataset)-1,4);
     %
     % Get closing price
-    closing = data(first(dataset)+1:last(dataset),4);
+    closing = data(first(dataset)+1:last(dataset),3);
+    %closing = data(first(dataset)+1:last(dataset),4);
     
     % Get price movement today and tomorrow
     moveToday = closing - opening;
@@ -56,11 +66,13 @@ for dataset = 1:20;
     % Slumpa fram dolda tillstand
     %hidden = randi(2,length(hidden),1);
     
-    buy = opening;%data(first(dataset):last(dataset)-1,6);
-    sell = closing;%data(first(dataset)+1:last(dataset),3);
+    buy = data(first(dataset):last(dataset)-1,6);
+    sell = data(first(dataset)+1:last(dataset),3);
+    %buy = opening;
+    %sell = closing;
     
     % Calculate the return
-    [endCapital, index, returnHMM, returnIndex, priceChange] = getEndingCapital(capital, buy, sell, learningVec(end), hidden);
+    [endCapital, indexCapital, returnHMM, returnIndex, priceChange] = getEndingCapital(capital, buy, sell, learningVec(end), hidden);
     
     %---------------------------- Validation ---------------------------------%
     
@@ -74,74 +86,58 @@ for dataset = 1:20;
     %     (states(startLearning+lengthLearningData:end)== 1 | states(startLearning+lengthLearningData:end)==2) == 2);
     
     correctProg = (hidden(1:end-1)==states(startLearning+lengthLearningData:end));
-    
     wrongProg = correctProg - 1;
     
     correct = sum(correctProg);
-    
     wrong = -sum(wrongProg);
-    
-    %disp(['Correct',' ', 'Wrong'])
-    %disp([correct, wrong])
     
     % MSE
     err = immse(movementProg(1:end-1),moveToday(learningVec(end)+2:end)');
     
-    %disp('Mean squared error:')
-    %disp(err)
+    ratio(dataset) = correct/(correct+wrong)*100;
     
-    %disp('Ending capital')
-    %disp(endCapital(end))
-    
-    %disp('Index')
-    %disp(index(end))
-    
-    SharpeRatio = sharpe(returnHMM(2:end), returnIndex(2:end));
-    disp([correct/(correct+wrong)*100 SharpeRatio*100 endCapital(end) index(end)])
-    
-    figure(dataset)
-    subplot(1,1,1)
-    plot(days, endCapital,'b',days, index,'r', [1 days(end)], [capital capital],'k')
-    set(gca,'TickLabelInterpreter','latex','fontsize',18)
-    xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
-    ylabel('Capital [SEK]','Interpreter','latex', 'fontsize', 18);
-    h_legend = legend('Change in capital with HMM','Index movement');
-    set(h_legend,'Interpreter','latex', 'fontsize', 18);
-    title('Change in capital','Interpreter','latex', 'fontsize', 20);
-    xlim([1 length(closing)])
+    pValueRatio(dataset) = 1-binocdf(correct,wrong+correct,0.5);
+    SharpeRatio(dataset) = getSharpe(returnHMM(2:end), returnIndex(2:end));
+    pValueReturn(dataset) = 1-tcdf(SharpeRatio(dataset)*sqrt(length(returnHMM)),length(returnHMM)-1);
+    absReturn(dataset) = (endCapital(end)/indexCapital(end))-1;
+    avgReturn(dataset) = (mean(endCapital)/mean(indexCapital))-1;
     
 end
+
+disp(['Data set',' ','Ratio [%]',' ','p-value',' ','Abs Return', ' ','Avg Return',' ','SharpeRatio',' ','p-value'])
+A = [(1:20)' ratio pValueRatio absReturn*100 avgReturn*100 SharpeRatio*100 pValueReturn];
+disp(A)
 
 %%
 %---------------------------- PLOTS --------------------------------------%
 
 % Plot the true and forecasted price
-figure(1);
-clf
-subplot(1,1,1)
-plot(1:length(closing), closing','b-', days+1, price,'r-');
-set(gca,'TickLabelInterpreter','latex','fontsize',18)
-xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
-ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
-h_legend = legend('Actual closing price','Predicted closing price');
-set(h_legend,'Interpreter','latex', 'fontsize', 18);
-title('Prediction with static learning model','Interpreter','latex', 'fontsize', 20);
-xlim([1 length(closing)])
-
-figure(2)
-subplot(1,1,1)
-plot(days+1,cumsum(movementProg)+opening(days(1)),'b',1:length(closing),closing,'r')
-set(gca,'TickLabelInterpreter','latex','fontsize',18)
-xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
-ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
-h_legend = legend('Cumulated movement','Actual closing price');
-set(h_legend,'Interpreter','latex', 'fontsize', 18);
-title('Cumulated movement in price','Interpreter','latex', 'fontsize', 20);
-xlim([1 length(closing)])
+% figure(1);
+% clf
+% subplot(1,1,1)
+% plot(1:length(closing), closing','b-', days+1, price,'r-');
+% set(gca,'TickLabelInterpreter','latex','fontsize',18)
+% xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
+% ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
+% h_legend = legend('Actual closing price','Predicted closing price');
+% set(h_legend,'Interpreter','latex', 'fontsize', 18);
+% title('Prediction with static learning model','Interpreter','latex', 'fontsize', 20);
+% xlim([1 length(closing)])
+% 
+% figure(2)
+% subplot(1,1,1)
+% plot(days+1,cumsum(movementProg)+opening(days(1)),'b',1:length(closing),closing,'r')
+% set(gca,'TickLabelInterpreter','latex','fontsize',18)
+% xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
+% ylabel('Price [SEK]','Interpreter','latex', 'fontsize', 18);
+% h_legend = legend('Cumulated movement','Actual closing price');
+% set(h_legend,'Interpreter','latex', 'fontsize', 18);
+% title('Cumulated movement in price','Interpreter','latex', 'fontsize', 20);
+% xlim([1 length(closing)])
 
 figure(3)
 subplot(1,1,1)
-plot(days, endCapital,'b',days, index,'r', [1 days(end)], [capital capital],'k')
+plot(days, endCapital,'b',days, indexCapital,'r', [1 days(end)], [capital capital],'k')
 set(gca,'TickLabelInterpreter','latex','fontsize',18)
 xlabel('Trading day','Interpreter','latex', 'fontsize', 18);
 ylabel('Capital [SEK]','Interpreter','latex', 'fontsize', 18);
@@ -166,7 +162,7 @@ xlim([1 length(closing)])
 %----------------------- Evalutaion of algorithm -------------------------%
 
 disp(['Corr/wrong',' ','CapitalHMM',' ','CapitalIndex',' ','RetHMM',' ','RetIndex','   ', 'PredState', '   ' ,'ActState'])
-disp([(correctProg+wrongProg) endCapital(2:end) index(2:end) returnHMM(2:end) returnIndex(2:end) hidden(1:end-1) states(learningVec(end)+1:end) moveToday(learningVec(end)+2:end)  priceChange(2:end)])
+disp([(correctProg+wrongProg) endCapital(2:end) indexCapital(2:end) returnHMM(2:end) returnIndex(2:end) hidden(1:end-1) states(learningVec(end)+1:end) moveToday(learningVec(end)+2:end)  priceChange(2:end)])
 
 %%
 SharpeRatio = sharpe(returnHMM(2:end), returnIndex(2:end));

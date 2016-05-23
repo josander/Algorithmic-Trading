@@ -38,7 +38,7 @@ for i = 1:length(hidden)-1
             returnHMM(i+1) = - dailyReturn;
             priceChange(i+1) = (closing(learningEnd+1+i) - opening(learningEnd+1+i));
             
-        case 7 % Predicted movement(i+1) equals zero -> Do nothing
+        case 5 % Predicted movement(i+1) equals zero -> Do nothing
             
             dailyReturn = (closing(learningEnd+1+i) - opening(learningEnd+1+i))/opening(learningEnd+1+i);
             endCapital(i+1) = capital;
